@@ -5,6 +5,7 @@ from app.extensions import db
 from app.models import User
 from .forms import RegistrationForm, LoginForm
 from . import auth_bp
+from urllib.parse import urlparse
 
 
 @auth_bp.route("/register", methods=["GET", "POST"])
@@ -41,10 +42,9 @@ def register():
         user.password = form.password.data
         db.session.add(user)
         db.session.commit()
-        flash("Account created! Please log in.", "success")
-        return redirect(url_for("auth.login"))
-
-    return render_template("auth/register.html", form=form)
+        login_user(user)                                      # ← add this
+        flash(f"Welcome, {user.username}! Your account has been created.", "success")
+        return redirect(url_for("main_bp.get_recipes"))       # ← change this
 
 @auth_bp.route("/login", methods=["GET", "POST"])
 def login():
@@ -63,6 +63,8 @@ def login():
         return jsonify(user.to_dict()), 200
 
     # ── HTML form path ───────────────────────────────────────────────────────
+
+
     form = LoginForm()
     if form.validate_on_submit():
         user = User.query.filter_by(username=form.username.data).first()
@@ -72,13 +74,38 @@ def login():
 
         login_user(user, remember=form.remember_me.data)
         flash(f"Welcome back, {user.username}! You are now logged in.", "success")
+
+        # TODO: read the `next` query parameter
+        next_url = request.args.get("next")
+
+        # TODO: redirect to next_url if it is safe, otherwise get_recipes
+        if is_safe_url(next_url):
+            return redirect(next_url)
         return redirect(url_for("main_bp.get_recipes"))
 
     return render_template("auth/login.html", form=form)
+
+
+
+
+# ── Helper ────────────────────────────────────────────────────────────────────
+def is_safe_url(target: str) -> bool:
+    """Return True only for relative paths like /recipes/new.
+    Rejects empty strings, external URLs (https://evil.com),
+    and protocol-relative URLs (//evil.com).
+    """
+    # TODO: implement using urlparse
+    #   hint: a safe URL has no netloc and its path starts with "/"
+    parsed = urlparse(target)
+    return not parsed.netloc and parsed.path.startswith("/")
+
 
 
 @auth_bp.route("/logout", methods=["POST"])
 @login_required
 def logout():
     logout_user()
-    return jsonify({"message": "logged out"}), 200
+    if request.is_json:
+        return jsonify({"message": "logged out"}), 200
+    flash("You have been logged out.", "info")
+    return redirect(url_for("main_bp.get_recipes"))

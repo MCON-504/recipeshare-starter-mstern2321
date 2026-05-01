@@ -1,8 +1,9 @@
-from flask import Blueprint, jsonify, request, render_template
+from flask import Blueprint, jsonify, request, render_template, redirect, url_for, flash
 from flask_login import login_required, current_user
 
 from .extensions import db
 from .models import Recipe
+from .forms import RecipeForm
 
 main_bp = Blueprint("main_bp", __name__)
 
@@ -19,35 +20,59 @@ def get_recipes():
         return jsonify([recipe.to_dict() for recipe in recipes])
     return render_template("home.html", recipes=recipes)
 
+@main_bp.route("/recipes/new", methods=["GET"])
+@login_required
+def get_new_recipe():
+
+    return render_template("recipe_form.html", form=RecipeForm())
+
 
 @main_bp.route("/recipes/<int:recipe_id>", methods=["GET"])
 def get_recipe(recipe_id: int):
     recipe = Recipe.query.get_or_404(recipe_id)
-    return jsonify(recipe.to_dict())
+    if request.is_json:
+        return jsonify(recipe.to_dict())
+    return render_template("recipe_detail.html", recipe=recipe)
 
 
-@main_bp.route("/recipes", methods=["POST"])
+@main_bp.route("/recipes", methods=["GET", "POST"])
 @login_required
 def create_recipe():
     data = request.get_json() or {}
+    if request.is_json:
 
-    required_fields = ["title", "description", "instructions", "prep_time"]
-    missing = [field for field in required_fields if field not in data]
-    if missing:
-        return {"error": f"Missing required fields: {', '.join(missing)}"}, 400
 
-    recipe = Recipe(
-        title=data["title"],
-        description=data["description"],
-        instructions=data["instructions"],
-        prep_time=data["prep_time"],
-        author=current_user,
-    )
+        required_fields = ["title", "description", "instructions", "prep_time"]
+        missing = [field for field in required_fields if field not in data]
+        if missing:
+            return {"error": f"Missing required fields: {', '.join(missing)}"}, 400
 
-    db.session.add(recipe)
-    db.session.commit()
+        recipe = Recipe(
+            title=data["title"],
+            description=data["description"],
+            instructions=data["instructions"],
+            prep_time=data["prep_time"],
+            author=current_user,
+        )
 
-    return jsonify(recipe.to_dict()), 201
+        db.session.add(recipe)
+        db.session.commit()
+
+        return jsonify(recipe.to_dict()), 201
+    form = RecipeForm()
+    if form.validate_on_submit():
+        recipe = Recipe(
+            title=form.title.data.strip(),
+            description=form.description.data.strip(),
+            instructions=form.instructions.data.strip(),
+            prep_time=form.prep_time.data.strip(),
+            author=current_user,
+        )
+
+        db.session.add(recipe)
+        db.session.commit()
+        flash("Recipe successfully created!")
+        return redirect(url_for("main_bp.get_recipe(recipe.id)"))
 
 
 @main_bp.route("/recipes/<int:recipe_id>", methods=["PATCH"])

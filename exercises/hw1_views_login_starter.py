@@ -19,7 +19,10 @@ def is_safe_url(target: str) -> bool:
     """
     # TODO: implement using urlparse
     #   hint: a safe URL has no netloc and its path starts with "/"
-    pass
+    parsed = urlparse(target)
+    return not parsed.netloc and parsed.path.startswith("/")
+
+
 
 
 # ── Login route (HTML form path only) ─────────────────────────────────────────
