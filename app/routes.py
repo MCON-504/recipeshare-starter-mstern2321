@@ -4,6 +4,7 @@ from flask_login import login_required, current_user
 from .extensions import db
 from .models import Recipe
 from .forms import RecipeForm
+from.forms import ProfileForm
 
 main_bp = Blueprint("main_bp", __name__)
 
@@ -102,3 +103,30 @@ def delete_recipe(recipe_id: int):
     db.session.commit()
     return "", 204
 
+from flask import render_template, redirect, url_for, flash
+from .forms import FeedbackForm
+
+
+# FOR TEST
+
+@main_bp.route("/feedback", methods=["GET", "POST"])
+def feedback():
+    form = FeedbackForm()
+
+    if form.validate_on_submit(): # On post
+        flash(f"Thanks, {form.name.data}! We received your feedback.", "success")
+        return redirect(url_for("main_bp.feedback"))
+
+    return render_template("feedback.html", form=form) # On get
+"""
+@main_bp.route("/profile", methods=["GET", "POST"])
+def feedback():
+    form = ProfileForm()
+
+    if form.validate_on_submit():
+        flash(f"Thanks, {form.display_name.data}! We received your profile.", "success")
+        return redirect(url_for("main_bp.feedback"))
+
+    return render_template("profiles.html", form=form) # On get
+
+"""
