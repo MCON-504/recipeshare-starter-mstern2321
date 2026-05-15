@@ -6,7 +6,7 @@
     <h1>New Recipe</h1>
     <p class="muted">Fill in the details below and click Save.</p>
 
-    <form method="POST" action="{{ url_for('main_bp.new_recipe') }}">
+    <form method="POST" action="{{ url_for('main_bp.get_new_recipe') }}">
         {{ form.hidden_tag() }}
 
         {# ---------------------------------------------------------------- #}

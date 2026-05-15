@@ -1,7 +1,7 @@
 from flask import render_template, flash, redirect, url_for  # already partly imported
 from flask_wtf import FlaskForm
 from wtforms import StringField, TextAreaField, IntegerField, SubmitField
-from wtforms.validators import DataRequired, Length, NumberRange
+from wtforms.validators import DataRequired, Length, NumberRange, Optional
 
 class RecipeForm(FlaskForm):
     title = StringField(
@@ -55,13 +55,14 @@ class ProfileForm(FlaskForm):
     )
     bio = TextAreaField(
         "bio",
-        validators=[Length(max=300)]
+        validators=[Optional(), Length(max=300)]
     )
     favorite_cuisine = StringField(
         "Favorite cuisine",
-        validators = [Length(max=80)]
+        validators = [Optional(), Length(max=80)]
     )
     years_cooking = IntegerField(
         "Years cooking",
-        validators=[NumberRange(min=0, max=100)]
+        validators=[Optional(), NumberRange(min=0, max=100)]
     )
+    submit = SubmitField("Save Profile")

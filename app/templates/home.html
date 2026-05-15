@@ -9,7 +9,7 @@
 <section class="recipe-list">
     <h2>All Recipes</h2>
     {% if current_user.is_authenticated %}
-    <a href="{{ url_for('main_bp.new_recipe') }}" class="btn btn-primary">
+    <a href="{{ url_for('main_bp.get_new_recipe') }}" class="btn btn-primary">
         ＋ Add Recipe
     </a>
     {% endif %}

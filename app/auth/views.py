@@ -45,6 +45,11 @@ def register():
         login_user(user)                                      # ← add this
         flash(f"Welcome, {user.username}! Your account has been created.", "success")
         return redirect(url_for("main_bp.get_recipes"))       # ← change this
+    return render_template("auth/register.html", form=form)
+
+def is_safe_url(target: str) -> bool:
+    parsed = urlparse(target)
+    return not parsed.netloc and parsed.path.startswith("/")
 
 @auth_bp.route("/login", methods=["GET", "POST"])
 def login():
