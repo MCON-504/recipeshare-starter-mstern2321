@@ -2,9 +2,9 @@ from flask import Blueprint, jsonify, request, render_template, redirect, url_fo
 from flask_login import login_required, current_user
 
 from .extensions import db
-from .models import Recipe, Profile
-from .forms import RecipeForm
-from.forms import ProfileForm
+from .models import Recipe, Profile, RecipeReview
+from .forms import RecipeForm, RecipeReviewForm, ProfileForm
+
 
 main_bp = Blueprint("main_bp", __name__)
 
@@ -19,8 +19,6 @@ def get_recipes():
     recipes = Recipe.query.order_by(Recipe.created_at.desc()).all()
     if request.is_json is None:
         return []
-    elif request.is_json is not None:
-        return jsonify([recipe.to_dict() for recipe in recipes])
     else:
         return render_template("home.html", recipes=recipes)
 
@@ -34,12 +32,11 @@ def get_new_recipe():
 @main_bp.route("/recipes/<int:recipe_id>", methods=["GET"])
 def get_recipe(recipe_id: int):
     recipe = Recipe.query.get_or_404(recipe_id)
+    reviews = RecipeReview.query.filter_by(recipe_id = recipe.id)
     if request.is_json is None:
         return []
-    elif request.is_json is not None:
-        return jsonify(recipe.to_dict())
     else:
-        return render_template("recipe_detail.html", recipe=recipe)
+        return render_template("recipe_detail.html", recipe=recipe, reviews = reviews)
 
 
 @main_bp.route("/recipes", methods=["GET", "POST"])
@@ -137,7 +134,7 @@ def profile():
             profile = Profile(user=current_user)
             db.session.add(profile)
         profile.display_name = form.display_name.data.strip()
-        profile.bio = (form.bio.data or "").strip()
+        profile.bio = (form.bio.data or "").strip() or None
         profile.favorite_cuisine = (form.favorite_cuisine.data or "").strip() or None
         profile.years_cooking = form.years_cooking.data
 
@@ -147,3 +144,24 @@ def profile():
 
     return render_template("profile_form.html", form=form) # On get
 
+
+@main_bp.route("/recipes/<recipe_id>/review", methods=["GET", "POST"])
+@login_required
+def review(recipe_id: int):
+    form = RecipeReviewForm()
+    recipe = Recipe.query.get_or_404(recipe_id)
+
+    if form.validate_on_submit():
+        review = RecipeReview()
+
+        review.user_id = current_user.id
+        review.recipe_id = recipe.id
+        review.rating = form.rating.data
+        review.comment = (form.comment.data or "").strip() or None
+
+        db.session.add(review)
+        db.session.commit()
+        flash(f"Thanks for your feedback", "success")
+        return redirect(url_for("main_bp.get_recipes"))
+
+    return render_template("review_form.html", form=form, recipe=recipe)
