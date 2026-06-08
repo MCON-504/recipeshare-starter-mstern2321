@@ -97,7 +97,56 @@ def test_logout_requires_login(client):
 def test_logout_success(client):
     register(client)
     client.post("/auth/login", json={"username": "alice", "password": "s3cret!!"})
-    rv = client.post("/auth/logout")
+    rv = client.post("/auth/logout", json={})
     assert rv.status_code == 200
     assert rv.get_json()["message"] == "logged out"
+def test_review_requires_login(client):
+    rv = client.post("/api/recipes/1/review", json={
+        "rating": 5,
+        "comment": "Great recipe!"
+    })
 
+    assert rv.status_code in (401, 302)
+def test_review_submission_success(client):
+    # Register and login
+    register(client)
+    client.post("/auth/login", json={
+        "username": "alice",
+        "password": "s3cret!!"
+    })
+
+    # Create recipe
+    recipe_response = client.post("/api/recipes", json={
+        "title": "Chocolate Cake",
+        "description": "A delicious cake",
+        "instructions": "Mix ingredients and bake.",
+        "prep_time": 45
+    })
+
+    assert recipe_response.status_code == 201
+
+    recipe_id = recipe_response.get_json()["id"]
+
+    # Submit review
+    review_response = client.post(
+        f"/api/recipes/{recipe_id}/review",
+        data={
+            "rating": 5,
+            "comment": "Excellent recipe!"
+        },
+        follow_redirects=True
+    )
+
+    assert review_response.status_code == 200
+
+    # Verify review was saved
+    from app.models import RecipeReview
+
+    with client.application.app_context():
+        review = RecipeReview.query.filter_by(
+            recipe_id=recipe_id,
+            comment="Excellent recipe!"
+        ).first()
+
+        assert review is not None
+        assert review.rating == 5

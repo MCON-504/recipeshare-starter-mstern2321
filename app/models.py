@@ -80,10 +80,10 @@ class RecipeReview(db.Model):
     comment = db.Column(db.Text, nullable=False)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(UTC), nullable=False)
 
-    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False, unique=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False, unique=False)
     user = db.relationship("User", backref=db.backref("reviews", lazy=True))
 
-    recipe_id = db.Column(db.Integer, db.ForeignKey("recipes.id"), nullable=False, unique=True)
+    recipe_id = db.Column(db.Integer, db.ForeignKey("recipes.id"), nullable=False, unique=False)
     recipe = db.relationship("Recipe", backref=db.backref("reviews", lazy=True))
 
 

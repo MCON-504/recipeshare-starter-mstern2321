@@ -47,9 +47,7 @@ def register():
         return redirect(url_for("main_bp.get_recipes"))       # ← change this
     return render_template("auth/register.html", form=form)
 
-def is_safe_url(target: str) -> bool:
-    parsed = urlparse(target)
-    return not parsed.netloc and parsed.path.startswith("/")
+
 
 @auth_bp.route("/login", methods=["GET", "POST"])
 def login():
@@ -100,6 +98,8 @@ def is_safe_url(target: str) -> bool:
     """
     # TODO: implement using urlparse
     #   hint: a safe URL has no netloc and its path starts with "/"
+    if isinstance(target, bytes):
+        target = target.decode()
     parsed = urlparse(target)
     return not parsed.netloc and parsed.path.startswith("/")
 

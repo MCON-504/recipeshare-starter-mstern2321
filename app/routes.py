@@ -17,10 +17,10 @@ def api_home():
 @main_bp.route("/recipes", methods=["GET"])
 def get_recipes():
     recipes = Recipe.query.order_by(Recipe.created_at.desc()).all()
-    if request.is_json is None:
-        return []
-    else:
-        return render_template("home.html", recipes=recipes)
+    if request.is_json:
+        return jsonify([recipe.to_dict() for recipe in recipes])
+
+    return render_template("home.html", recipes=recipes)
 
 @main_bp.route("/recipes/new", methods=["GET"])
 @login_required
@@ -33,36 +33,39 @@ def get_new_recipe():
 def get_recipe(recipe_id: int):
     recipe = Recipe.query.get_or_404(recipe_id)
     reviews = RecipeReview.query.filter_by(recipe_id = recipe.id)
-    if request.is_json is None:
-        return []
-    else:
-        return render_template("recipe_detail.html", recipe=recipe, reviews = reviews)
+    if request.is_json:
+        return jsonify(recipe.to_dict())
+    return render_template("recipe_detail.html", recipe=recipe, reviews=reviews)
 
 
 @main_bp.route("/recipes", methods=["GET", "POST"])
 @login_required
 def create_recipe():
     data = request.get_json() or {}
-    if request.is_json:
+    required_fields = ["title", "description", "instructions", "prep_time"]
 
+    missing = [field for field in required_fields if field not in data]
 
-        required_fields = ["title", "description", "instructions", "prep_time"]
-        missing = [field for field in required_fields if field not in data]
-        if missing:
-            return {"error": f"Missing required fields: {', '.join(missing)}"}, 400
+    if missing:
 
-        recipe = Recipe(
-            title=data["title"],
-            description=data["description"],
-            instructions=data["instructions"],
-            prep_time=data["prep_time"],
-            author=current_user,
-        )
+        return {"error": f"Missing required fields: {', '.join(missing)}"}, 400
 
-        db.session.add(recipe)
-        db.session.commit()
+    recipe = Recipe(
+        title=data["title"],
+        description=data["description"],
+        instructions=data["instructions"],
+        prep_time=data["prep_time"],
+        author=current_user,
+    )
 
-        return jsonify(recipe.to_dict()), 201
+    db.session.add(recipe)
+    db.session.commit()
+
+    return jsonify(recipe.to_dict()), 201
+
+@main_bp.route("/recipes/new", methods = ["GET", "POST"])
+@login_required
+def new_recipe():
     form = RecipeForm()
     if form.validate_on_submit():
         recipe = Recipe(
@@ -77,6 +80,7 @@ def create_recipe():
         db.session.commit()
         flash("Recipe successfully created!")
         return redirect(url_for("main_bp.get_recipe(recipe.id)"))
+    return render_template("recipe_form.html", form=form)
 
 
 @main_bp.route("/recipes/<int:recipe_id>", methods=["PATCH"])
@@ -148,20 +152,24 @@ def profile():
 @main_bp.route("/recipes/<recipe_id>/review", methods=["GET", "POST"])
 @login_required
 def review(recipe_id: int):
-    form = RecipeReviewForm()
     recipe = Recipe.query.get_or_404(recipe_id)
+    form = RecipeReviewForm()
+
 
     if form.validate_on_submit():
-        review = RecipeReview()
+        new_review = RecipeReview(
+            rating = form.rating.data,
+            comment=form.comment.data.strip(),
+            user = current_user,
+            recipe=recipe
 
-        review.user_id = current_user.id
-        review.recipe_id = recipe.id
-        review.rating = form.rating.data
-        review.comment = (form.comment.data or "").strip() or None
+        )
 
-        db.session.add(review)
+
+        db.session.add(new_review)
         db.session.commit()
         flash(f"Thanks for your feedback", "success")
-        return redirect(url_for("main_bp.get_recipes"))
-
+        return redirect(
+            url_for("main_bp.get_recipe", recipe_id=recipe_id)
+        )
     return render_template("review_form.html", form=form, recipe=recipe)
