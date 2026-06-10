@@ -1,6 +1,7 @@
 import pytest
 from app import create_app
 from app.extensions import db
+from app.models import RecipeReview
 
 
 @pytest.fixture
@@ -140,7 +141,6 @@ def test_review_submission_success(client):
     assert review_response.status_code == 200
 
     # Verify review was saved
-    from app.models import RecipeReview
 
     with client.application.app_context():
         review = RecipeReview.query.filter_by(

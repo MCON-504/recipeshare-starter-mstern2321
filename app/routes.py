@@ -72,14 +72,14 @@ def new_recipe():
             title=form.title.data.strip(),
             description=form.description.data.strip(),
             instructions=form.instructions.data.strip(),
-            prep_time=form.prep_time.data.strip(),
+            prep_time=form.prep_time.data,
             author=current_user,
         )
 
         db.session.add(recipe)
         db.session.commit()
         flash("Recipe successfully created!")
-        return redirect(url_for("main_bp.get_recipe(recipe.id)"))
+        return redirect(url_for("main_bp.get_recipe", recipe_id=recipe.id))
     return render_template("recipe_form.html", form=form)
 
 
@@ -170,6 +170,6 @@ def review(recipe_id: int):
         db.session.commit()
         flash(f"Thanks for your feedback", "success")
         return redirect(
-            url_for("main_bp.get_recipe", recipe_id=recipe_id)
+            url_for("main_bp.get_recipe", recipe_id=recipe.id)
         )
     return render_template("review_form.html", form=form, recipe=recipe)
