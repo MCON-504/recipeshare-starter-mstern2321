@@ -1,0 +1,156 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="recipe-detail">
+
+    <h1>{{ recipe.title }}</h1>
+
+    <p class="recipe-meta">
+        {{ recipe.prep_time }} min prep
+        {% if recipe.author %}
+        <br>By {{ recipe.author.username }}
+        {% endif %}
+    </p>
+
+    <p class="recipe-description">
+        {{ recipe.description }}
+    </p>
+
+    <h2>Instructions</h2>
+
+    <div class="recipe-instructions">
+        {{ recipe.instructions }}
+    </div>
+
+    <a href="{{ url_for('main_bp.review', recipe_id=recipe.id) }}" class="btn-review">
+        ＋ Write a Review
+    </a>
+
+    <!-- REVIEWS SECTION -->
+    <section class="reviews-section">
+
+        <h2>Reviews</h2>
+
+        {% if reviews %}
+
+        {% for review in reviews %}
+        <div class="review-card">
+
+            <div class="review-header">
+                <div class="review-rating">
+                    ⭐ {{ review.rating }}/5
+                </div>
+
+                <div class="review-meta">
+                    {% if review.author %}
+                    By {{ review.author.username }}
+                    {% endif %}
+                </div>
+            </div>
+
+            <p class="review-comment">
+                {{ review.comment }}
+            </p>
+
+        </div>
+        {% endfor %}
+
+        {% else %}
+
+        <p class="no-reviews">
+            No reviews yet. Be the first to leave one!
+        </p>
+
+        {% endif %}
+
+    </section>
+
+    <a href="{{ url_for('main_bp.get_recipes') }}" class="btn btn-back">
+        ← Back to recipes
+    </a>
+
+</section>
+
+<style>
+    .recipe-detail { max-width: 720px; margin: 2rem auto; }
+
+    .recipe-detail h1 { font-size: 1.9rem; font-weight: 800; margin-bottom: .5rem; }
+    .recipe-detail h2 { font-size: 1.2rem; font-weight: 700; margin: 1.75rem 0 .6rem; }
+
+    .recipe-meta         { font-size: .85rem; color: var(--muted); margin-bottom: 1.25rem; }
+    .recipe-description  { color: var(--text); margin-bottom: 1rem; line-height: 1.7; }
+    .recipe-instructions { white-space: pre-wrap; line-height: 1.8; color: var(--text); }
+
+    .btn-review {
+      display: inline-block;
+      margin-top: 1.5rem;
+      background: var(--brand);
+      color: #fff;
+      padding: .5rem 1.1rem;
+      border-radius: 7px;
+      font-size: .9rem;
+      font-weight: 600;
+      text-decoration: none;
+      transition: background .15s;
+    }
+
+    .btn-review:hover {
+      background: var(--brand-dark);
+    }
+
+    .reviews-section {
+      margin-top: 2.5rem;
+    }
+
+    .review-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1rem 1.25rem;
+      margin-bottom: 1rem;
+    }
+
+    .review-header {
+      display: flex;
+      align-items: center;
+      gap: .75rem;
+      margin-bottom: .5rem;
+    }
+
+    .review-rating {
+      color: var(--accent);
+      font-size: 1.05rem;
+      letter-spacing: .05em;
+    }
+
+    .review-meta {
+      font-size: .82rem;
+      color: var(--muted);
+    }
+
+    .review-comment {
+      color: var(--text);
+      line-height: 1.65;
+      margin: 0;
+    }
+
+    .no-reviews {
+      color: var(--muted);
+      font-size: .92rem;
+      margin-top: .5rem;
+    }
+
+    .btn-back {
+      display: inline-block;
+      margin-top: 2rem;
+      color: var(--brand);
+      font-weight: 600;
+      text-decoration: none;
+      font-size: .9rem;
+    }
+
+    .btn-back:hover {
+      text-decoration: underline;
+    }
+</style>
+{% endblock %}
